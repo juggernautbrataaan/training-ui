@@ -1,0 +1,15 @@
+services:
+  frontend:
+    container_name: vite-react-frontend
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,32 @@
+# Этап 1: Сборка проекта
+FROM node:18-alpine AS builder
+
+# Устанавливаем pnpm
+RUN npm install -g pnpm
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем файлы зависимостей
+COPY package.json pnpm-lock.yaml ./
+
+# Устанавливаем зависимости
+RUN pnpm install
+
+# Копируем исходный код и собираем проект
+COPY . .
+RUN pnpm build
+
+# Этап 2: Запуск сервера (без Nginx)
+FROM node:18-alpine
+
+# Устанавливаем serve для статики
+RUN npm install -g serve
+
+# Копируем собранный проект из builder-этапа
+WORKDIR /app
+COPY --from=builder /app/dist .
+
+# Открываем порт и запускаем сервер
+EXPOSE 3000
+CMD ["serve", "-s", ".", "-l", "3000"]
