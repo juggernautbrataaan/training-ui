@@ -11,8 +11,9 @@ import type {
 import { useCategoryStore } from "@/app-ml/features/labels/stores/categoryStore";
 
 // Constants for pagination
-const ITEMS_PER_PAGE = 50;
-const API_URL = "https://dev-ml.ics-it.ru/api/datasets";
+const API_URL = import.meta.env.VITE_TRAINING_PIPELINE_ENDPOINT ;
+const LOCK_SEC = import.meta.env.VITE_IMAGES_LOCK_SEC ;
+const IMAGES_PER_PAGE = import.meta.env.VITE_IMAGES_PER_PAGE
 // Helper function to generate mock images for a category
 
 // Update the interface to include lock-related fields
@@ -25,8 +26,8 @@ interface CategoryState {
   hasMoreImages: boolean;
   lockOverrideKey?: string;
   lockExpiresAt?: number;
-  skip?: number; // Добавляем параметр skip для повторной блокировки
-  stop?: number; // Добавляем параметр stop для повторной блокировки
+  // skip?: number; // Добавляем параметр skip для повторной блокировки
+  // stop?: number; // Добавляем параметр stop для повторной блокировки
   originalImageOrder?: Record<string, number>; // Store original positions of images
 }
 
@@ -82,7 +83,7 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
   // API calls
   fetchImages: async (
     categoryId: number | string,
-    params?: PaginationParams
+    // params?: PaginationParams
   ) => {
     set({ isLoading: true });
 
@@ -102,8 +103,8 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
         get().getCategoryState(categoryId) || createDefaultCategoryState();
 
       // Вычисляем параметры пагинации
-      const skip = params?.skip ?? 0;
-      const stop = params?.stop ?? skip + ITEMS_PER_PAGE;
+      // const skip = params?.skip ?? 0;
+      // const stop = params?.stop ?? skip + IMAGES_PER_PAGE;
 
       let processedImages: ProcessedImage[] = [];
       let hasMoreImages = true;
@@ -115,7 +116,7 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
 
       // Выполняем запрос к API
       const response = await fetch(
-        `${API_URL}/${activeDataset}/images/${categoryId}?lock_sec=300&skip=${skip}&stop=${stop}`
+        `${API_URL}/api/datasets/${activeDataset}/images/${categoryId}?lock_sec=${LOCK_SEC}&skip=${0}&stop=${IMAGES_PER_PAGE}`
       );
       const data = await response.json();
       if (!data.response.images || data.response.images.length === 0) {
@@ -129,8 +130,8 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
 
       // If this is a new batch (not a relock), create a new order mapping
       const isNewBatch =
-        skip !== categoryState.skip ||
-        stop !== categoryState.stop ||
+        // skip !== categoryState.skip ||
+        // stop !== categoryState.stop ||
         Object.keys(originalImageOrder).length === 0;
 
       if (isNewBatch) {
@@ -176,17 +177,17 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
       );
 
       // Проверяем, есть ли у нас еще изображения
-      hasMoreImages = data.response.images.length === ITEMS_PER_PAGE;
+      hasMoreImages = data.response.images.length === IMAGES_PER_PAGE;
 
       // Сохраняем информацию о блокировке
       if (data.response.lock && data.response.lock_override_key) {
         lockOverrideKey = data.response.lock_override_key;
-        lockExpiresAt = Date.now() + 300 * 1000; // 5 минут от текущего времени
+        lockExpiresAt = Date.now() + LOCK_SEC * 1000; 
       }
 
       // Вычисляем общее количество страниц на основе unprocessed_image_count выбранной категории
       const totalImages = selectedCategory?.unprocessed_image_count || 0;
-      const totalPages = Math.ceil(totalImages / ITEMS_PER_PAGE);
+      const totalPages = Math.ceil(totalImages / IMAGES_PER_PAGE);
 
       if (!isNewBatch) {
         // Sort the processed images according to their original order
@@ -200,13 +201,13 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
       const updatedCategoryState: CategoryState = {
         ...categoryState,
         images: processedImages,
-        currentPage: Math.floor(skip / ITEMS_PER_PAGE) + 1,
+        // currentPage: Math.floor(skip / IMAGES_PER_PAGE) + 1,
         totalPages,
         hasMoreImages,
         lockOverrideKey,
         lockExpiresAt,
-        skip, // Сохраняем параметр skip для повторной блокировки
-        stop, // Сохраняем параметр stop для повторной блокировки
+        // skip, // Сохраняем параметр skip для повторной блокировки
+        // stop, // Сохраняем параметр stop для повторной блокировки
         originalImageOrder,
       };
 
@@ -517,22 +518,22 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
     const { lock_override_key, updates } = updatesBatch;
     const activeDataset = useCategoryStore.getState().currentDataset;
 
-    const bodyObject = { updates };
-    const bodyJson = JSON.stringify(bodyObject);
+    // const bodyObject = { updates };
+    // const bodyJson = JSON.stringify(bodyObject);
     const url =
-      `${API_URL}/${activeDataset}/images` +
+      `${API_URL}/api/datasets/${activeDataset}/images` +
       (lock_override_key ? `?lock_override_key=${lock_override_key}` : "");
 
-    // Генерация CURL-запроса
-    const curlCommand = [
-      `curl -X 'POST' \\`,
-      `'${url}' \\`,
-      `-H 'accept: application/json' \\`,
-      `-H 'Content-Type: application/json' \\`,
-      `-d '${bodyJson.replace(/'/g, "\\'")}'`,
-    ].join("\n");
+    // // Генерация CURL-запроса
+    // const curlCommand = [
+    //   `curl -X 'POST' \\`,
+    //   `'${url}' \\`,
+    //   `-H 'accept: application/json' \\`,
+    //   `-H 'Content-Type: application/json' \\`,
+    //   `-d '${bodyJson.replace(/'/g, "\\'")}'`,
+    // ].join("\n");
 
-    console.log("Generated CURL command:\n", curlCommand);
+    // console.log("Generated CURL command:\n", curlCommand);
 
     // ===== ОТПРАВКА ЗАПРОСА (ПОКА ЗАКОММЕНТИРОВАНА) =====
 
@@ -563,7 +564,9 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
     get().clearProcessedImages(categoryId);
 
     if (selectedCategory && selectedCategory.unprocessed_image_count > 0) {
-      await get().fetchImages(categoryId, { skip: 0, stop: ITEMS_PER_PAGE });
+      // await get().fetchImages(categoryId, { skip: 0, stop: IMAGES_PER_PAGE });
+      await get().fetchImages(categoryId);
+
     }
   },
 
@@ -627,14 +630,16 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
       console.log(`Lock expired for category ${categoryId}, relocking batch`);
 
       // Получаем текущие параметры пагинации
-      const skip = categoryState.skip || 0;
-      const stop = categoryState.stop || skip + ITEMS_PER_PAGE;
+      // const skip = categoryState.skip || 0;
+      // const stop = categoryState.stop || skip + IMAGES_PER_PAGE;
 
       // Повторно блокируем ту же порцию
       const selectedCategoryId = useCategoryStore.getState().selectedCategoryId;
       if (selectedCategoryId && selectedCategoryId.toString() === categoryId) {
         // Только если это текущая выбранная категория
-        get().fetchImages(categoryId, { skip, stop });
+        // get().fetchImages(categoryId, { skip, stop });
+        get().fetchImages(categoryId);
+
       }
     }
   },

@@ -4,7 +4,7 @@ import { create } from "zustand"
 // import { persist } from "zustand/middleware"
 import type { CategoryData, Label } from "@/app-ml/types"
 
-const API_URL = 'https://dev-ml.ics-it.ru/api/datasets'
+const API_URL = import.meta.env.VITE_TRAINING_PIPELINE_ENDPOINT
 
 
 
@@ -59,8 +59,15 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
 
   // Set current dataset
   setCurrentDataset: (dataset: string) => {
-    set({ currentDataset: dataset })
-  },
+    const currentDataset = get().currentDataset
+    if (currentDataset !== dataset) {
+      set({
+        currentDataset: dataset,
+        selectedCategoryId: null,
+      })
+    } else {
+      set({ currentDataset: dataset })
+    }  },
 
   
 
@@ -86,7 +93,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
       let data
 
       // Use real API with the selected dataset
-      const response = await fetch(`${API_URL}/${activeDataset}/categories`)
+      const response = await fetch(`${API_URL}/api/datasets/${activeDataset}/categories`)
       data = await response.json()
 
       // Check if categories are empty and set selectedCategoryId to null if they are

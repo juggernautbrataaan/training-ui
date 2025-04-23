@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+const API_URL = import.meta.env.VITE_TRAINING_PIPELINE_ENDPOINT
 
 interface Dataset {
   alias: string,
@@ -36,7 +37,7 @@ export function DatasetSelector({ activeDataset, onDatasetChange }: DatasetSelec
       setIsLoading(true)
       try {
         // In the future, replace this with an actual API call
-        const response = await fetch('https://dev-ml.ics-it.ru/api/datasets?status_filter=correcting')
+        const response = await fetch(`${API_URL}/api/datasets?status_filter=correcting`)
         const data = await response.json()
         setDatasets(data.response)
       } catch (error) {
