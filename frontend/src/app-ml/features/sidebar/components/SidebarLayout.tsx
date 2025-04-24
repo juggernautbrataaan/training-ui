@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react";
 import { useCategoryStore } from "@/app-ml/features/labels/stores/categoryStore";
-
+import { useFragmentStore } from "@/app-ml/features/images/stores/fragmentStore"
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarContent } from "./SidebarContent";
 
@@ -12,8 +12,8 @@ interface SidebarProps {
 }
 
 export function SidebarLayout({ setTab, tab }: SidebarProps) {
-  const {  fetchCategories } =
-    useCategoryStore()
+  const { fetchCategories, setCurrentDataset, deselectCategory } = useCategoryStore()
+  const { clearAllFragments } = useFragmentStore()
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [activeDataset, setActiveDataset] = useState<string | null>(null)
 
@@ -27,7 +27,17 @@ export function SidebarLayout({ setTab, tab }: SidebarProps) {
     setTab(app)
   }
   const handleDatasetChange = (dataset: string) => {
+    console.log("Changing dataset to:", dataset)
+
+    // First, clear the selected category and fragments
+    deselectCategory()
+    clearAllFragments()
+
+    // Then update the dataset
     setActiveDataset(dataset)
+    setCurrentDataset(dataset)
+
+    // Finally, fetch new categories for the selected dataset
     fetchCategories(dataset)
   }
 

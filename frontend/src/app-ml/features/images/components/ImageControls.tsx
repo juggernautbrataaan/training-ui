@@ -206,11 +206,10 @@ export function ImageControls({ fragment, allCategories, onThumbsUp, onThumbsDow
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <DropdownMenuItem className={selectedLabelId === category.category_id ? "bg-red-100 " : ""} onClick={() => handleLabelSelect(category.category_id, category.category)}>
-                          <span className={`truncate h-full `}>{truncateText(category.category, 30)}</span>
-                          {/* {selectedLabelId === category.category_id && <Check className="ml-auto h-4 w-4" />} */}
+                          <span className={`truncate `}>{category.category}</span>
                         </DropdownMenuItem>
                       </TooltipTrigger>
-                      {category.category.length > 25 && (
+                      {category.category.length > 30 && (
                         <TooltipContent side="right">
                           <p>{category.category}</p>
                         </TooltipContent>
@@ -250,17 +249,14 @@ export function ImageControls({ fragment, allCategories, onThumbsUp, onThumbsDow
                           <TooltipTrigger asChild>
                             <DropdownMenuItem
                               onClick={() => handleLabelSelect(category.category_id, category.category)}
-                              className="flex items-start gap-2"
+                              className={selectedLabelId === category.category_id ? "bg-red-100 " : ""}
                             >
-                              <div className="flex-1 truncate max-w-[180px]">
-                                {truncateText(category.category, 25)}
+                              <div className="truncate">
+                                {category.category}
                               </div>
-                              {selectedLabelId === category.category_id && (
-                                <Check className="ml-auto h-4 w-4 mt-1 flex-shrink-0" />
-                              )}
                             </DropdownMenuItem>
                           </TooltipTrigger>
-                          {category.category.length > 25 && (
+                          {category.category.length > 30 && (
                             <TooltipContent side="right">
                               <p>{category.category}</p>
                             </TooltipContent>

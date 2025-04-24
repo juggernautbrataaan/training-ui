@@ -26,8 +26,6 @@ interface CategoryState {
   hasMoreImages: boolean;
   lockOverrideKey?: string;
   lockExpiresAt?: number;
-  // skip?: number; // Добавляем параметр skip для повторной блокировки
-  // stop?: number; // Добавляем параметр stop для повторной блокировки
   originalImageOrder?: Record<string, number>; // Store original positions of images
 }
 
@@ -54,7 +52,7 @@ interface FragmentState {
     lock_override_key?: string;
   };
   checkLockExpiration: (categoryId: string) => void;
-
+  clearAllFragments: () => void // New method to clear all fragments
   // Getters
   getCategoryState: (categoryId: number | string) => CategoryState | null;
   getImagesForCategory: (categoryId: number | string) => ProcessedImage[];
@@ -83,7 +81,6 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
   // API calls
   fetchImages: async (
     categoryId: number | string,
-    // params?: PaginationParams
   ) => {
     set({ isLoading: true });
 
@@ -103,8 +100,7 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
         get().getCategoryState(categoryId) || createDefaultCategoryState();
 
       // Вычисляем параметры пагинации
-      // const skip = params?.skip ?? 0;
-      // const stop = params?.stop ?? skip + IMAGES_PER_PAGE;
+     
 
       let processedImages: ProcessedImage[] = [];
       let hasMoreImages = true;
@@ -130,8 +126,7 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
 
       // If this is a new batch (not a relock), create a new order mapping
       const isNewBatch =
-        // skip !== categoryState.skip ||
-        // stop !== categoryState.stop ||
+      
         Object.keys(originalImageOrder).length === 0;
 
       if (isNewBatch) {
@@ -201,13 +196,11 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
       const updatedCategoryState: CategoryState = {
         ...categoryState,
         images: processedImages,
-        // currentPage: Math.floor(skip / IMAGES_PER_PAGE) + 1,
         totalPages,
         hasMoreImages,
         lockOverrideKey,
         lockExpiresAt,
-        // skip, // Сохраняем параметр skip для повторной блокировки
-        // stop, // Сохраняем параметр stop для повторной блокировки
+      
         originalImageOrder,
       };
 
@@ -232,6 +225,11 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
       useCategoryStore.getState().deselectCategory();
       set({ isLoading: false });
     }
+  },
+  // Add a new method to clear all fragments
+  clearAllFragments: () => {
+    console.log("Clearing all fragments")
+    set({ categoryStates: {}, isLoading: false })
   },
 
   markAsCorrect: async (imageId: string) => {
@@ -629,9 +627,6 @@ export const useFragmentStore = create<FragmentState>((set, get) => ({
     if (categoryState.lockExpiresAt && now >= categoryState.lockExpiresAt) {
       console.log(`Lock expired for category ${categoryId}, relocking batch`);
 
-      // Получаем текущие параметры пагинации
-      // const skip = categoryState.skip || 0;
-      // const stop = categoryState.stop || skip + IMAGES_PER_PAGE;
 
       // Повторно блокируем ту же порцию
       const selectedCategoryId = useCategoryStore.getState().selectedCategoryId;
